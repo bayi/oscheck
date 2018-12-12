@@ -1,0 +1,17 @@
+[Unit]
+Description=System Check Service
+
+[Service]
+ExecStart=/usr/bin/node /home/bayi/oscheck/index.js
+WorkingDirectory=/home/bayi/oscheck
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=oscheck
+User=bayi
+Group=bayi
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

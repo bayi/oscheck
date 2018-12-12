@@ -1,0 +1,15 @@
+{
+  "name": "mqttosinfo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "bayi",
+  "license": "MIT",
+  "dependencies": {
+    "diskusage": "^0.2.4",
+    "mqtt": "^2.18.2"
+  }
+}
