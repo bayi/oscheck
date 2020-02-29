@@ -5,15 +5,16 @@ const mqtt        = require('mqtt')
 const machineId   = require('node-machine-id')
 
 const capitalize = str => str.charAt(0).toUpperCase() + str.slice(1)
-const hostname          = `host${capitalize(os.hostname())}`
+const hostName            = process.env.HOSTNAME || os.hostname()
+const sensorName          = `host${capitalize(hostName)}`
 const timeIntervalSec   = 10
-const rootTopic = `homeassistant/sensor/${hostname}`
+const rootTopic = `homeassistant/sensor/${sensorName}`
 const topics = {
     state: `${rootTopic}/state`,
     config: `${rootTopic}/config`
 }
 
-console.log(`* Starting oscheck for: ${hostname}`)
+console.log(`* Starting oscheck for: ${sensorName}`)
 console.log('* Connecting to MQTT broker ...')
 process.on('exit', () => console.log('! Exiting ...') )
 
@@ -30,7 +31,7 @@ client.subscribe(topics.config)
 client.on('connect', () => {
     console.log('* Connected.')
     client.publish(topics.config, JSON.stringify({
-        name: hostname,
+        name: sensorName,
         icon: 'mdi:server',
         json_attributes: [ 'status', 'diskpercent', 'diskfree', 'uptime', 'mempercent', 'memfree' ],
         value_template: '{{ value_json.status }}',
