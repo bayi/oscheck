@@ -1,84 +1,69 @@
 "use strict"
+const os          = require('os')
+const disk        = require('check-disk-space')
+const mqtt        = require('mqtt')
+const machineId   = require('node-machine-id')
 
-var os          = require('os')
-var disk        = require('diskusage')
-var mqtt        = require('mqtt')
-var machineId   = require('node-machine-id')
-var hostname    = `host${capitalize(os.hostname())}`
-
-const root = `homeassistant/sensor/${hostname}`
-const state = `${root}/state`
-const config = `${root}/config`
-const configObj = {
-    name: hostname,
-    icon: 'mdi:laptop',
-    json_attributes: [ 'status', 'diskpercent', 'diskfree', 'uptime', 'mempercent', 'memfree' ],
-    value_template: '{{ value_json.status }}',
-    unique_id: machineId.machineIdSync(),
+const capitalize = str => str.charAt(0).toUpperCase() + str.slice(1)
+const hostname          = `host${capitalize(os.hostname())}`
+const timeIntervalSec   = 10
+const rootTopic = `homeassistant/sensor/${hostname}`
+const topics = {
+    state: `${rootTopic}/state`,
+    config: `${rootTopic}/config`
 }
 
-process.on('exit', () => {
-    console.log('Kilepes ...')
+console.log(`* Starting oscheck for: ${hostname}`)
+console.log('* Connecting to MQTT broker ...')
+process.on('exit', () => console.log('! Exiting ...') )
+
+const client = mqtt.connect('mqtt://mqtt.bayi.hu', {
+    will: {
+        topic: topics.state,
+        payload: '{"status": "offline"}',
+        qos: 2,
+        retain: true
+    }
 })
 
-function capitalize(str)
-{
-    return str.charAt(0).toUpperCase() + str.slice(1)
-}
-
-function abort(str)
-{
-    console.error(str)
-    process.exit(1)
-}
-
-console.log('Csatlakozas a brokerhez ...')
-const mqttOptions = {}
-mqttOptions.will = {
-    topic: state,
-    payload: '{"status": "offline"}',
-    qos: 2,
-    retain: true
-}
-
-const client = mqtt.connect('mqtt://mqtt.bayi.hu', mqttOptions)
-client.subscribe(config)
-
+client.subscribe(topics.config)
 client.on('connect', () => {
-    console.log('Csatlakozva.')
-    client.publish(config, JSON.stringify(configObj), { retain: true })
+    console.log('* Connected.')
+    client.publish(topics.config, JSON.stringify({
+        name: hostname,
+        icon: 'mdi:server',
+        json_attributes: [ 'status', 'diskpercent', 'diskfree', 'uptime', 'mempercent', 'memfree' ],
+        value_template: '{{ value_json.status }}',
+        unique_id: machineId.machineIdSync(),
+    }), { retain: true })
 })
-
 
 function getStatus()
 {
     return new Promise(resolve => {
         const info = {
-            status: "online",
-            disktotal: 0,
-            diskfree: 0,
-            diskpercent: 0.00,
-            loadavg: os.loadavg(),
+            status: 'online',
+            disk: 0,
+            loadavg: 0,
             uptime: os.uptime(),
-            memtotal: parseFloat(os.totalmem()),
-            memfree: parseFloat(os.freemem()),
-            mempercent: parseFloat(((os.freemem() / os.totalmem()) * 100).toFixed(2))
+            memory: parseFloat(((os.freemem() / os.totalmem()) * 100).toFixed(2))
         }
-        disk.check('/', (err, diskinfo) => {
-            info.disktotal = diskinfo.total
-            info.diskfree = diskinfo.free
-            info.diskpercent = parseFloat(((diskinfo.free / diskinfo.total) * 100).toFixed(2))
+
+        const loadAvg = os.loadavg()
+        if (loadAvg && loadAvg.length && loadAvg[0])
+            info.load = loadAvg[0]
+
+        disk('/').then(diskSpace => {
+            if (diskSpace && diskSpace.size)
+                info.disk = parseFloat((diskSpace.free / diskSpace.size * 100).toFixed(2))
             resolve(info)
         })
     })
 }
 
-function publish()
-{
-    getStatus().then(info => {
-        client.publish(state, JSON.stringify(info), { retain: true })
-    })
-}
+const publish = () => getStatus().then(info => {
+    client.publish(topics.state, JSON.stringify(info), { retain: false })
+})
 
 publish()
-setInterval(publish, 5 * 1000)
+setInterval(publish, timeIntervalSec * 1000)

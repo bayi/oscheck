@@ -9,7 +9,7 @@
   "author": "bayi",
   "license": "MIT",
   "dependencies": {
-    "diskusage": "^0.2.4",
+    "check-disk-space": "^2.1.0",
     "mqtt": "^2.18.2",
     "node-machine-id": "^1.1.10"
   }
