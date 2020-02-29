@@ -2,15 +2,15 @@
 Description=System Check Service
 
 [Service]
-ExecStart=/usr/bin/node /home/bayi/oscheck/index.js
-WorkingDirectory=/home/bayi/oscheck
+ExecStart=/usr/bin/node /home/%i/oscheck/index.js
+WorkingDirectory=/home/%i/oscheck
 Restart=always
 RestartSec=10
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=oscheck
-User=bayi
-Group=bayi
+User=%i
+Group=%i
 Environment=NODE_ENV=production
 
 [Install]
