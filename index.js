@@ -21,7 +21,7 @@ process.on('exit', () => console.log('! Exiting ...') )
 const client = mqtt.connect('mqtt://mqtt.bayi.hu', {
     will: {
         topic: topics.state,
-        payload: '{"state": "offline"}',
+        payload: '{"status": "offline"}',
         qos: 2,
         retain: true
     }
@@ -37,6 +37,7 @@ client.on('connect', () => {
         payload_available: 'online',
         payload_not_available: 'offline',
         state_topic: topics.state,
+        json_attributes_topic: topics.state,
         unique_id: `${machineId.machineIdSync()}${process.env.UID ? '-' + process.env.UID : ''}`,
     }), { retain: true })
 })
@@ -45,7 +46,7 @@ function getStatus()
 {
     return new Promise(resolve => {
         const info = {
-            state: 'online',
+            status: 'online',
             disk: 0,
             load: 0,
             cpu: 0,
