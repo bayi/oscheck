@@ -6,12 +6,12 @@ const machineId   = require('node-machine-id')
 
 const capitalize = str => str.charAt(0).toUpperCase() + str.slice(1)
 const hostName            = process.env.HOSTNAME || os.hostname()
-const sensorName          = `host${capitalize(hostName)}`
+const sensorName          = `host_${hostName}`
 const timeIntervalSec   = 10
 const rootTopic = `homeassistant/sensor/${sensorName}`
 const topics = {
     state: `${rootTopic}/state`,
-    config: `${rootTopic}/config`
+    config: `${rootTopic}/config`,
 }
 
 console.log(`* Starting oscheck for: ${sensorName}`)
@@ -21,7 +21,7 @@ process.on('exit', () => console.log('! Exiting ...') )
 const client = mqtt.connect('mqtt://mqtt.bayi.hu', {
     will: {
         topic: topics.state,
-        payload: '{"status": "offline"}',
+        payload: '{"state": "offline"}',
         qos: 2,
         retain: true
     }
@@ -33,8 +33,10 @@ client.on('connect', () => {
     client.publish(topics.config, JSON.stringify({
         name: sensorName,
         icon: 'mdi:server',
-        json_attributes: [ 'status', 'diskpercent', 'diskfree', 'uptime', 'mempercent', 'memfree' ],
         value_template: '{{ value_json.status }}',
+        payload_available: 'online',
+        payload_not_available: 'offline',
+        state_topic: topics.state,
         unique_id: machineId.machineIdSync(),
     }), { retain: true })
 })
@@ -43,9 +45,10 @@ function getStatus()
 {
     return new Promise(resolve => {
         const info = {
-            status: 'online',
+            state: 'online',
             disk: 0,
-            loadavg: 0,
+            load: 0,
+            cpu: 0,
             uptime: os.uptime(),
             memory: parseFloat(((os.freemem() / os.totalmem()) * 100).toFixed(2))
         }
