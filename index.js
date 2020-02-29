@@ -37,7 +37,7 @@ client.on('connect', () => {
         payload_available: 'online',
         payload_not_available: 'offline',
         state_topic: topics.state,
-        unique_id: machineId.machineIdSync() + process.env.UID ? process.env.UID : '',
+        unique_id: `${machineId.machineIdSync()}${process.env.UID ? '-' + process.env.UID : ''}`,
     }), { retain: true })
 })
 
