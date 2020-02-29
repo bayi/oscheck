@@ -6,7 +6,7 @@ const machineId   = require('node-machine-id')
 
 const capitalize = str => str.charAt(0).toUpperCase() + str.slice(1)
 const hostName            = process.env.HOSTNAME || os.hostname()
-const sensorName          = `host_${hostName}`
+const sensorName          = `host-${hostName}`
 const timeIntervalSec   = 10
 const rootTopic = `homeassistant/sensor/${sensorName}`
 const topics = {
