@@ -1,76 +1,70 @@
 "use strict"
+const config      = require('./config')
+const MqttSensor  = require('./sensor')
 const os          = require('os')
+const osutils     = require('os-utils')
 const disk        = require('check-disk-space')
-const mqtt        = require('mqtt')
-const machineId   = require('node-machine-id')
 
-const capitalize = str => str.charAt(0).toUpperCase() + str.slice(1)
-const hostName            = process.env.HOSTNAME || os.hostname()
-const sensorName          = `host-${hostName}`
-const timeIntervalSec   = 10
-const baseTopic = process.env.MQTT_TOPIC || 'homeassistant/sensor'
-const rootTopic = `${baseTopic}/${sensorName}`
-const topics = {
-    state: `${rootTopic}/state`,
-    config: `${rootTopic}/config`,
-}
-
-console.log(`* Starting oscheck for: ${sensorName}`)
-console.log('* Connecting to MQTT broker ...')
-console.log(`* Publising to ${rootTopic}`)
 process.on('exit', () => console.log('! Exiting ...') )
+console.log(`* Starting oscontrol for: ${config.entityName}`)
 
-const client = mqtt.connect(process.env.MQTT_SERVER || 'mqtt://mqtt.bayi.hu', {
-    will: {
-        topic: topics.state,
-        payload: '{"status": "offline"}',
-        qos: 2,
-        retain: true
-    }
-})
-
-client.subscribe(topics.config)
-client.on('connect', () => {
-    console.log('* Connected.')
-    client.publish(topics.config, JSON.stringify({
-        name: sensorName,
-        icon: 'mdi:server',
-        value_template: '{{ value_json.status }}',
-        payload_available: 'online',
-        payload_not_available: 'offline',
-        state_topic: topics.state,
-        json_attributes_topic: topics.state,
-        unique_id: `${machineId.machineIdSync()}${process.env.UID ? '-' + process.env.UID : ''}`,
-    }), { retain: true })
-})
-
-function getStatus()
-{
-    return new Promise(resolve => {
-        const info = {
-            status: 'online',
-            disk: 0,
-            load: 0,
-            cpu: 0,
-            uptime: os.uptime(),
-            memory: parseFloat(((os.freemem() / os.totalmem()) * 100).toFixed(2))
-        }
-
+/*
+const sensorLoad = new MqttSensor(
+    'load',
+    () => new Promise(resolve => {
         const loadAvg = os.loadavg()
         if (loadAvg && loadAvg.length && loadAvg[0])
-            info.load = loadAvg[0]
+            return resolve(`${loadAvg[0]}`)
+        return resolve('0')
+    }),
+    { icon: 'mdi:white-balance-sunny'}
+)
+*/
 
+/*
+const sensorUptime = new MqttSensor(
+    'uptime',
+    () => new Promise(resolve => resolve(`${os.uptime()}`)),
+    { icon: 'mdi:run'}
+)
+*/
+
+const sensorDisk = new MqttSensor(
+    'disk',
+    () => new Promise(resolve => {
         disk('/').then(diskSpace => {
             if (diskSpace && diskSpace.size)
-                info.disk = parseFloat((diskSpace.free / diskSpace.size * 100).toFixed(2))
-            resolve(info)
+                resolve(`${parseFloat((diskSpace.free / diskSpace.size * 100).toFixed(2))}`)
+            resolve(`0`)
         })
-    })
-}
+    }),
+    { icon: 'mdi:harddisk',}
+)
 
-const publish = () => getStatus().then(info => {
-    client.publish(topics.state, JSON.stringify(info), { retain: false })
+const sensorMemory = new MqttSensor(
+    'memory',
+    () => new Promise(resolve => resolve(`${parseFloat(((os.freemem() / os.totalmem()) * 100).toFixed(2))}`)),
+    { icon: 'mdi:memory'}
+)
+
+const sensorCpu = new MqttSensor(
+    'cpu',
+    () => new Promise(resolve => {
+        osutils.cpuUsage(usage => {
+            return resolve(`${parseFloat(usage * 100).toFixed(2)}`)
+        })
+    }),
+    { icon: 'mdi:chip'}
+)
+
+const update = () => new Promise(resolve => {
+    // sensorLoad.update()
+    // sensorUptime.update()
+    sensorDisk.update()
+    sensorMemory.update()
+    sensorCpu.update()
+    return resolve()
 })
 
-publish()
-setInterval(publish, timeIntervalSec * 1000)
+update()
+setInterval(update, config.timeIntervalSec * 1000)
