@@ -8,7 +8,8 @@ const capitalize = str => str.charAt(0).toUpperCase() + str.slice(1)
 const hostName            = process.env.HOSTNAME || os.hostname()
 const sensorName          = `host-${hostName}`
 const timeIntervalSec   = 10
-const rootTopic = `homeassistant/sensor/${sensorName}`
+const baseTopic = process.env.MQTT_TOPIC || 'homeassistant/sensor'
+const rootTopic = `${baseTopic}/${sensorName}`
 const topics = {
     state: `${rootTopic}/state`,
     config: `${rootTopic}/config`,
@@ -16,9 +17,10 @@ const topics = {
 
 console.log(`* Starting oscheck for: ${sensorName}`)
 console.log('* Connecting to MQTT broker ...')
+console.log(`* Publising to ${rootTopic}`)
 process.on('exit', () => console.log('! Exiting ...') )
 
-const client = mqtt.connect('mqtt://mqtt.bayi.hu', {
+const client = mqtt.connect(process.env.MQTT_SERVER || 'mqtt://mqtt.bayi.hu', {
     will: {
         topic: topics.state,
         payload: '{"status": "offline"}',
