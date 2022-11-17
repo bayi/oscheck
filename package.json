@@ -10,7 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "check-disk-space": "^2.1.0",
-    "minimist": ">=1.2.2",
+    "minimist": ">=1.2.6",
     "mqtt": "^2.18.2",
     "node-machine-id": "^1.1.10",
     "os-utils": "^0.0.14"
