@@ -6,7 +6,7 @@ const osutils     = require('os-utils')
 const disk        = require('check-disk-space')
 
 process.on('exit', () => console.log('! Exiting ...') )
-console.log(`* Starting oscontrol for: ${config.entityName}`)
+console.log(`* Starting oscheck for: ${config.entityName}`)
 
 /*
 const sensorLoad = new MqttSensor(
