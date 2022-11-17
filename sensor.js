@@ -18,7 +18,9 @@ class MqttSensor {
         }, defaults)
         this.stateCb = stateCb
         console.log(`* (${this.config.name}) Connecting to MQTT broker ...`)
-        this.client = mqtt.connect('mqtt://mqtt.bayi.hu', {
+        this.client = mqtt.connect(config.mqttHost, {
+            username: config.mqttUser,
+            password: config.mqttPassword,
             will: {
                 topic: this.config.topics.available,
                 payload: 'offline',
