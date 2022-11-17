@@ -7,7 +7,7 @@ const entityName            = `host-${hostName}`
 const baseTopic             = process.env.MQTT_TOPIC || 'homeassistant/sensor' 
 
 module.exports = {
-    mqttHost: process.env.MQTT_SERVER || 'mqtt://mqtt.bayi.hu',
+    mqttHost: process.env.MQTT_SERVER || 'mqtt://10.4.1.212',
     entityName: entityName,
     rootTopic: `${baseTopic}/${entityName}`,
     uniqueId: `${machineId.machineIdSync()}${process.env.UID ? '-' + process.env.UID : ''}`,
